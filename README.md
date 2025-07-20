@@ -35,7 +35,7 @@ git init
 git add .
 git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/tu-usuario/peluqueria-app.git
+git remote add origin https://github.com/rodriicollad0/peluqueria-app.git
 git push -u origin main
 
 # 2. Conectar en Render.com
@@ -93,7 +93,7 @@ git branch -M main
 ### 2. Subir a GitHub:
 ```bash
 # Crear repositorio en GitHub primero
-git remote add origin https://github.com/TU-USUARIO/peluqueria-app.git
+git remote add origin https://github.com/rodriicollad0/peluqueria-app.git
 git push -u origin main
 ```
 
