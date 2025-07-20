@@ -1,0 +1,147 @@
+.booking-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.success-icon {
+  animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.booking-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #065F46;
+  margin: 0;
+}
+
+.booking-card {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.booking-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #D1FAE5;
+}
+
+.booking-info:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.info-value {
+  font-weight: 500;
+  color: #065F46;
+  text-align: right;
+}
+
+.booking-actions {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.back-button {
+  flex: 1;
+  background-color: #6B7280;
+  color: white;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.back-button:hover {
+  background-color: #4B5563;
+  transform: translateY(-1px);
+}
+
+.print-button {
+  flex: 1;
+  background-color: #2563EB;
+  color: white;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.print-button:hover {
+  background-color: #1D4ED8;
+  transform: translateY(-1px);
+}
+
+.booking-note {
+  background: #FEF3C7;
+  border: 1px solid #FCD34D;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  width: 100%;
+  max-width: 400px;
+  font-size: 0.875rem;
+}
+
+.booking-note p {
+  margin: 0.5rem 0;
+  color: #92400E;
+}
+
+.booking-note p:first-child {
+  margin-top: 0;
+}
+
+.booking-note p:last-child {
+  margin-bottom: 0;
+}
+
+/* Estilos para impresión */
+@media print {
+  .booking-actions {
+    display: none;
+  }
+  
+  .booking-summary {
+    color: black;
+  }
+  
+  .booking-card {
+    border: 2px solid #000;
+    background: white;
+  }
+}
