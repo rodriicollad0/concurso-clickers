@@ -28,34 +28,7 @@ Sistema moderno de reservas para peluquería con comunicación serial para dispo
 
 ## 📱 Despliegue a Internet
 
-### Opción 1: Render (Recomendado) 🌟
-```bash
-# 1. Subir código a GitHub
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/rodriicollad0/peluqueria-app.git
-git push -u origin main
-
-# 2. Conectar en Render.com
-# - Crear cuenta en render.com
-# - Conectar repositorio de GitHub
-# - Seleccionar "Static Site"
-# - Build Command: npm ci && npm run build
-# - Publish Directory: dist
-# - ¡Deploy automático!
-```
-
-### Opción 2: Netlify (También buena)
-1. Construir: `npm run build`
-2. Subir carpeta `dist` a [netlify.com](https://netlify.com)
-3. ¡Listo!
-
-### Opción 3: Vercel
-1. Conectar repo de GitHub en [vercel.com](https://vercel.com)
-2. Auto-deploy configurado
-3. ¡Listo!
+La app está disponible en: [https://peluqueria-app-0a8e.onrender.com/](https://peluqueria-app-0a8e.onrender.com/)
 
 ## 🔧 Configuración para Producción
 
@@ -64,51 +37,6 @@ git push -u origin main
 Permissions-Policy: serial=*
 Cross-Origin-Embedder-Policy: require-corp
 Cross-Origin-Opener-Policy: same-origin
-```
-
-### Configuración Render.com:
-✅ **Ya configurado automáticamente** con `render.yaml`
-- Headers para Web Serial API incluidos
-- Build command optimizado
-- Redirects configurados
-
-### Para Netlify, crear `public/_headers`:
-```
-/*
-  Permissions-Policy: serial=*
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-```
-
-## 🚀 Pasos detallados para Render
-
-### 1. Preparar el repositorio:
-```bash
-git init
-git add .
-git commit -m "🚀 Initial deployment"
-git branch -M main
-```
-
-### 2. Subir a GitHub:
-```bash
-# Crear repositorio en GitHub primero
-git remote add origin https://github.com/rodriicollad0/peluqueria-app.git
-git push -u origin main
-```
-
-### 3. Desplegar en Render:
-1. Ir a [render.com](https://render.com) y crear cuenta
-2. Conectar con GitHub
-3. Seleccionar tu repositorio
-4. Elegir **"Static Site"**
-5. Configuración se detecta automáticamente desde `render.yaml`
-6. Click **"Create Static Site"**
-7. ¡Esperar 2-3 minutos y listo!
-
-### 4. Tu app estará en:
-```
-https://tu-app-nombre.onrender.com
 ```
 
 ## 📱 Configuración Android
