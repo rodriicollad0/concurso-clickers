@@ -145,4 +145,53 @@ export class QuizController {
   async deleteParticipant(@Param('id', ParseIntPipe) id: number) {
     return await this.quizService.deleteParticipant(id);
   }
+
+  // =============== 🚀 REDIS-POWERED REAL-TIME ENDPOINTS ===============
+
+  @Get('active/status')
+  async getActiveQuizStatus() {
+    return await this.quizService.getActiveQuizInfo();
+  }
+
+  @Get(':id/leaderboard')
+  async getQuizLeaderboard(
+    @Param('id', ParseIntPipe) quizId: number,
+  ) {
+    return await this.quizService.getQuizLeaderboard(quizId, 10);
+  }
+
+  @Get(':id/leaderboard/top/:limit')
+  async getTopParticipants(
+    @Param('id', ParseIntPipe) quizId: number,
+    @Param('limit', ParseIntPipe) limit: number,
+  ) {
+    return await this.quizService.getQuizLeaderboard(quizId, limit);
+  }
+
+  @Get(':quizId/participants/:clickerId/rank')
+  async getParticipantRank(
+    @Param('quizId', ParseIntPipe) quizId: number,
+    @Param('clickerId') clickerId: string,
+  ) {
+    return await this.quizService.getParticipantRank(quizId, clickerId);
+  }
+
+  @Get('questions/:id/stats')
+  async getQuestionStats(@Param('id', ParseIntPipe) questionId: number) {
+    return await this.quizService.getQuestionStatsRealTime(questionId);
+  }
+
+  @Get('questions/:id/stats/live')
+  async getQuestionStatsLive(@Param('id', ParseIntPipe) questionId: number) {
+    // Este endpoint devuelve las estadísticas más recientes de Redis
+    return await this.quizService.getQuestionStatsRealTime(questionId);
+  }
+
+  @Post(':id/reset-cache')
+  @HttpCode(HttpStatus.OK)
+  async resetQuizCache(@Param('id', ParseIntPipe) quizId: number) {
+    // Endpoint para limpiar cache de Redis de un quiz específico
+    // Útil para debugging o reiniciar estado
+    return { message: 'Quiz cache reset functionality would go here' };
+  }
 }

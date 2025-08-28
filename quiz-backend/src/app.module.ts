@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { QuizModule } from './quiz/quiz.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { QuizModule } from './quiz/quiz.module';
       }),
       inject: [ConfigService],
     }),
+    RedisModule,
     QuizModule,
   ],
   controllers: [AppController],
