@@ -1,24 +1,270 @@
+/* Estilos principales para el Sistema de Concursos con Clickers */
 .app {
-
-  max-width: 700px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .app-title {
   text-align: center;
-  color: #333;
-  margin-bottom: 2rem;
-  font-size: 2rem;
+  color: white;
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+}
+
+/* Navegación por pestañas */
+.tab-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 30px;
+}
+
+.tab-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 24px;
+  border-radius: 8px 8px 0 0;
+  font-size: 16px;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.tab-button.active {
+  background: white;
+  color: #374151;
+  border-color: white;
+  border-bottom-color: white;
+}
+
+/* Instrucciones de teclado */
+.keyboard-instructions {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.keyboard-info {
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  padding: 12px 20px;
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  animation: pulse-soft 2s infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+}
+
+/* Información del quiz activo */
+.active-quiz-info {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.active-quiz-info h3 {
+  color: white;
+  margin: 0 0 8px 0;
+  font-size: 1.2em;
+}
+
+.active-quiz-info p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-size: 0.9em;
+}
+
+/* Botones adicionales */
+.next-question-button {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.next-question-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Controles del Concurso */
+.quiz-controls {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #E5E7EB;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.start-quiz-button {
+  background: #10B981;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.start-quiz-button:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.start-quiz-button:disabled {
+  background: #6B7280;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.start-quiz-button.active {
+  background: #3B82F6;
+}
+
+.end-quiz-button {
+  background: #EF4444;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.end-quiz-button:hover {
+  background: #DC2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.quiz-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.quiz-status .status-indicator {
+  font-size: 16px;
+}
+
+.quiz-status .status-indicator.active {
+  color: #10B981;
+}
+
+.quiz-status .status-indicator.inactive {
+  color: #6B7280;
+}
+
+.quiz-status .status-text {
+  font-weight: 500;
+  color: #374151;
 }
 
 .app-content {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Pantalla de bienvenida */
+.welcome-screen {
   background: white;
-  padding: 2rem;
-  border-radius: 0.5rem;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #E5E7EB;
+}
+
+.welcome-screen h2 {
+  color: #1F2937;
+  font-size: 28px;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.welcome-screen p {
+  color: #6B7280;
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+
+.feature-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.feature-item {
+  background: #F9FAFB;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  font-weight: 500;
+  color: #374151;
+}
+
+.quiz-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* Serial Controls */

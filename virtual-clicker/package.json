@@ -1,0 +1,19 @@
+{
+  "name": "concurso-clicker-virtual",
+  "version": "1.0.0",
+  "description": "Simulador virtual de Arduino clicker para sistema de concursos",
+  "main": "virtual-clicker.js",
+  "scripts": {
+    "start": "node virtual-clicker.js",
+    "install-deps": "npm install serialport express cors",
+    "setup": "npm install && echo Simulador listo para usar!"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "socket.io": "^4.7.5"
+  },
+  "keywords": ["arduino", "clicker", "simulator", "quiz", "virtual"],
+  "author": "Rodrigo Collado",
+  "license": "MIT"
+}
