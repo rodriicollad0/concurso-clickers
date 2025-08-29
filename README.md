@@ -122,11 +122,11 @@ npm run start:dev
 ```bash
 cd virtual-clicker
 
-# Instalación automática
-install.bat
+# Instalar dependencias
+npm install
 
-# Iniciar simulador
-start-virtual-clicker.bat
+# Iniciar simulador manualmente
+node virtual-clicker.js
 # Simulador disponible en http://localhost:3001
 ```
 
@@ -147,11 +147,12 @@ start-virtual-clicker.bat
 Para probar la aplicación sin hardware físico:
 
 ### Instalación y Uso
-1. Ejecutar `virtual-clicker/install.bat`
-2. Ejecutar `virtual-clicker/start-virtual-clicker.bat`
-3. Se abrirá automáticamente en `http://localhost:3001`
-4. Desde la app principal, conectar el clicker virtual
-5. Usar botones A, B, C, D en la interfaz web o teclado
+1. Navegar a la carpeta: `cd virtual-clicker`
+2. Instalar dependencias: `npm install`
+3. Ejecutar simulador: `node virtual-clicker.js`
+4. Abrir navegador en `http://localhost:3001`
+5. Desde la app principal, conectar el clicker virtual
+6. Usar botones A, B, C, D en la interfaz web o teclado
 
 ### Características del Simulador
 - ✅ **Compatible con Web Serial API** - Funciona como Arduino real
@@ -169,9 +170,11 @@ Para probar la aplicación sin hardware físico:
 - **Protocolo**: Emula exactamente el formato Arduino: `DEVICE_ID:ANSWER\n`
 
 ### Uso del Simulador
-1. **Ejecutar**: `virtual-clicker/start-virtual-clicker.bat`
-2. **Verificar**: Abrir `http://localhost:3001`
-3. **Conectar**: En app principal → "🎮 Conectar Clicker"
+1. **Navegar**: `cd virtual-clicker`
+2. **Instalar**: `npm install`
+3. **Ejecutar**: `node virtual-clicker.js`
+4. **Verificar**: Abrir `http://localhost:3001`
+5. **Conectar**: En app principal → "🎮 Conectar Clicker"
 4. **Responder**: Usar botones web o teclas A, B, C, D
 
 ## 🤖 Hardware Arduino (Teórico)
@@ -290,8 +293,9 @@ npm run test:e2e     # Tests end-to-end
 
 ### Simulador Virtual
 ```bash
-npm start            # Iniciar simulador
-node virtual-clicker.js  # Comando directo
+cd virtual-clicker
+npm install            # Instalar dependencias
+node virtual-clicker.js  # Ejecutar simulador
 ```
 
 ## 🐛 Solución de Problemas
@@ -370,7 +374,13 @@ El backend proporciona una API REST completa:
 
 ### Error: "Simulador no conecta"
 - **Causa**: Simulador no ejecutándose
-- **Solución**: Ejecutar `virtual-clicker/start-virtual-clicker.bat`
+- **Solución**: 
+  ```bash
+  cd virtual-clicker
+  npm install
+  node virtual-clicker.js
+  # Verificar http://localhost:3001
+  ```
 
 ### Error: "Node.js no encontrado"
 - **Causa**: Node.js no instalado
@@ -527,16 +537,12 @@ POST http://localhost:3000/api/quiz/answers
 
 ### Scripts de Ejecución del Backend
 
-#### Opción 1: Scripts Personalizados (Recomendado)
+#### Método Manual (Recomendado)
 ```bash
-# PowerShell
-.\start-backend.ps1
-
-# Batch
-.\start-backend.bat
-
-# Compilar y ejecutar
-.\build-and-start.ps1
+cd quiz-backend
+npm install
+npm run build
+npm run start:dev
 ```
 
 #### Opción 2: Comando Manual
@@ -687,7 +693,7 @@ npm run start:dev    # http://localhost:3000
 # Terminal 3 - Simulador (opcional)
 cd virtual-clicker
 npm install
-npm start           # http://localhost:3001
+node virtual-clicker.js   # http://localhost:3001
 ```
 
 ## 🎯 Próximas Mejoras
