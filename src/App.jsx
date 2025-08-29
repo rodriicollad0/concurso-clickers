@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { QuizDisplay } from './components/QuizDisplay';
 import { ClickerResults } from './components/ClickerResults';
@@ -33,6 +33,29 @@ function App() {
   const [isConnecting, setIsConnecting] = useState(false); // Estado de conexión en progreso
   const [virtualSocket, setVirtualSocket] = useState(null); // WebSocket para simulador virtual
   const [isVirtualMode, setIsVirtualMode] = useState(false); // Modo simulador virtual
+  
+  // Estados para reconexión automática
+  const [autoReconnectEnabled, setAutoReconnectEnabled] = useState(true); // Reconexión automática habilitada
+  const [isReconnecting, setIsReconnecting] = useState(false); // Estado de reconexión en progreso
+  const [reconnectDelay, setReconnectDelay] = useState(500); // Delay en ms para la reconexión automática
+
+  // Refs para trackear el estado actual sin problemas de closure
+  const isQuizActiveRef = useRef(isQuizActive);
+  const currentQuestionRef = useRef(currentQuestion);
+  const answersRef = useRef(answers);
+  
+  // Actualizar refs cuando cambien los estados
+  useEffect(() => {
+    isQuizActiveRef.current = isQuizActive;
+  }, [isQuizActive]);
+  
+  useEffect(() => {
+    currentQuestionRef.current = currentQuestion;
+  }, [currentQuestion]);
+  
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
 
   // Pregunta de ejemplo para demostración
   const sampleQuestion = {
@@ -72,30 +95,66 @@ function App() {
     setSerialOutput(prev => prev + `🎯 Quiz iniciado: ${quiz.title} (${questions.length} preguntas)\n`);
   };
 
-  const handleQuestionStart = (question, questionIndex) => {
-    // Convertir formato del backend al formato esperado por el clicker
-    const formattedQuestion = {
-      id: question.id,
-      question: question.questionText,
-      options: {
-        A: question.optionA,
-        B: question.optionB,
-        C: question.optionC,
-        D: question.optionD
-      },
-      correctAnswer: question.correctAnswer,
-      timeLimit: question.timeLimit || 30
-    };
-    
-    setCurrentQuestion(formattedQuestion);
-    setCurrentQuestionIndex(questionIndex);
-    setAnswers([]);
-    setIsQuizActive(true);
-    setActiveTab('clicker'); // Cambiar a la pestaña de clickers
-    setSerialOutput(prev => prev + `🎯 Pregunta ${questionIndex + 1} iniciada: ${question.questionText}\n`);
+  const handleQuestionStart = async (question, questionIndex) => {
+    try {
+      setSerialOutput(prev => prev + `🔧 Iniciando handleQuestionStart para pregunta ${questionIndex + 1}\n`);
+      
+      // Convertir formato del backend al formato esperado por el clicker
+      const formattedQuestion = {
+        id: question.id,
+        question: question.questionText,
+        options: {
+          A: question.optionA,
+          B: question.optionB,
+          C: question.optionC,
+          D: question.optionD
+        },
+        correctAnswer: question.correctAnswer,
+        timeLimit: question.timeLimit || 30
+      };
+      
+      setCurrentQuestion(formattedQuestion);
+      setCurrentQuestionIndex(questionIndex);
+      setAnswers([]);
+      setIsQuizActive(true);
+      setActiveTab('clicker'); // Cambiar a la pestaña de clickers
+      
+      setSerialOutput(prev => prev + `🎯 Pregunta ${questionIndex + 1} iniciada: ${question.questionText}\n`);
+      setSerialOutput(prev => prev + `✅ Quiz activado (isQuizActive: true)\n`);
+      
+      // NO HACER RECONEXIÓN AQUÍ - mantener simple
+      setSerialOutput(prev => prev + `⚙️ handleQuestionStart completado SIN reconexión\n`);
+      
+    } catch (error) {
+      console.error('Error al iniciar pregunta:', error);
+      setSerialOutput(prev => prev + `❌ Error al iniciar pregunta: ${error.message}\n`);
+      
+      // Si falla, continuar con la pregunta de todos modos
+      const formattedQuestion = {
+        id: question.id,
+        question: question.questionText,
+        options: {
+          A: question.optionA,
+          B: question.optionB,
+          C: question.optionC,
+          D: question.optionD
+        },
+        correctAnswer: question.correctAnswer,
+        timeLimit: question.timeLimit || 30
+      };
+      
+      setCurrentQuestion(formattedQuestion);
+      setCurrentQuestionIndex(questionIndex);
+      setAnswers([]);
+      setIsQuizActive(true);
+      setActiveTab('clicker'); // Cambiar a la pestaña de clickers
+      setSerialOutput(prev => prev + `🎯 Pregunta ${questionIndex + 1} iniciada: ${question.questionText}\n`);
+      setSerialOutput(prev => prev + `✅ Quiz activado (isQuizActive: true) - modo fallback\n`);
+    }
   };
 
   const handleQuizEnd = () => {
+    setSerialOutput(prev => prev + `🛑 ATENCIÓN: handleQuizEnd llamado - desactivando quiz\n`);
     setActiveQuiz(null);
     setQuizQuestions([]);
     setCurrentQuestion(null);
@@ -106,18 +165,46 @@ function App() {
 
   /**
    * Inicia una nueva pregunta del concurso
+   * Incluye reconexión automática de clickers para asegurar vinculación correcta
    */
-  const startQuestion = () => {
-    // Si hay un quiz activo, usar sus preguntas, si no usar la pregunta de ejemplo
-    if (activeQuiz && quizQuestions.length > 0 && currentQuestionIndex < quizQuestions.length) {
-      const question = quizQuestions[currentQuestionIndex];
-      handleQuestionStart(question, currentQuestionIndex);
-    } else {
-      // Usar pregunta de ejemplo
-      setCurrentQuestion(sampleQuestion);
-      setAnswers([]);
-      setIsQuizActive(true);
-      setSerialOutput(prev => prev + `🎯 Pregunta de ejemplo iniciada: ${sampleQuestion.question}\n`);
+  const startQuestion = async () => {
+    try {
+      setSerialOutput(prev => prev + `🚀 Iniciando startQuestion...\n`);
+      
+      // HACER RECONEXIÓN ANTES DE INICIAR LA PREGUNTA
+      if (autoReconnectEnabled && isConnected) {
+        setSerialOutput(prev => prev + `🔄 Reconectando ANTES de iniciar la pregunta...\n`);
+        await performAutoReconnect();
+        setSerialOutput(prev => prev + `✅ Reconexión completada, procediendo con la pregunta\n`);
+      }
+
+      // Si hay un quiz activo, usar sus preguntas, si no usar la pregunta de ejemplo
+      if (activeQuiz && quizQuestions.length > 0 && currentQuestionIndex < quizQuestions.length) {
+        const question = quizQuestions[currentQuestionIndex];
+        await handleQuestionStart(question, currentQuestionIndex);
+      } else {
+        // Usar pregunta de ejemplo
+        setCurrentQuestion(sampleQuestion);
+        setAnswers([]);
+        setIsQuizActive(true);
+        setSerialOutput(prev => prev + `🎯 Pregunta de ejemplo iniciada: ${sampleQuestion.question}\n`);
+        setSerialOutput(prev => prev + `✅ Quiz activado (isQuizActive: true)\n`);
+      }
+    } catch (error) {
+      console.error('Error al iniciar pregunta:', error);
+      setSerialOutput(prev => prev + `❌ Error al iniciar pregunta: ${error.message}\n`);
+      
+      // Si falla, continuar con la pregunta de todos modos
+      if (activeQuiz && quizQuestions.length > 0 && currentQuestionIndex < quizQuestions.length) {
+        const question = quizQuestions[currentQuestionIndex];
+        await handleQuestionStart(question, currentQuestionIndex);
+      } else {
+        setCurrentQuestion(sampleQuestion);
+        setAnswers([]);
+        setIsQuizActive(true);
+        setSerialOutput(prev => prev + `🎯 Pregunta de ejemplo iniciada: ${sampleQuestion.question}\n`);
+        setSerialOutput(prev => prev + `✅ Quiz activado (isQuizActive: true) - modo fallback\n`);
+      }
     }
   };
 
@@ -125,6 +212,7 @@ function App() {
    * Finaliza la pregunta actual y muestra resultados
    */
   const endQuestion = () => {
+    setSerialOutput(prev => prev + `🛑 ATENCIÓN: endQuestion llamado - desactivando quiz\n`);
     setIsQuizActive(false);
     const questionType = activeQuiz ? 'del quiz' : 'de ejemplo';
     setSerialOutput(prev => prev + `⏰ Pregunta ${questionType} finalizada. Respuestas recibidas: ${answers.length}\n`);
@@ -133,11 +221,19 @@ function App() {
   /**
    * Avanza a la siguiente pregunta del quiz (si existe)
    */
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     if (activeQuiz && quizQuestions.length > 0 && currentQuestionIndex < quizQuestions.length - 1) {
       const nextIndex = currentQuestionIndex + 1;
       const nextQ = quizQuestions[nextIndex];
-      handleQuestionStart(nextQ, nextIndex);
+      
+      // HACER RECONEXIÓN ANTES DE LA SIGUIENTE PREGUNTA
+      if (autoReconnectEnabled && isConnected) {
+        setSerialOutput(prev => prev + `🔄 Reconectando ANTES de la siguiente pregunta...\n`);
+        await performAutoReconnect();
+        setSerialOutput(prev => prev + `✅ Reconexión completada, procediendo con siguiente pregunta\n`);
+      }
+      
+      await handleQuestionStart(nextQ, nextIndex);
     } else {
       // No hay más preguntas, finalizar quiz
       handleQuizEnd();
@@ -147,12 +243,12 @@ function App() {
   /**
    * Procesa una respuesta recibida del clicker
    */
-  const handleAnswer = (answer, deviceId) => {
-    console.log(`🔍 handleAnswer llamado - answer: ${answer}, deviceId: ${deviceId}, isQuizActive: ${isQuizActive}, currentQuestion:`, currentQuestion);
+  const handleAnswer = useCallback((answer, deviceId) => {
+    const currentIsQuizActive = isQuizActiveRef.current;
+    const currentQuestionState = currentQuestionRef.current;
     
-    if (!isQuizActive || !currentQuestion) {
-      console.log(`❌ Respuesta rechazada - Quiz inactivo o sin pregunta actual`);
-      setSerialOutput(prev => prev + `❌ Respuesta rechazada: Quiz ${isQuizActive ? 'activo' : 'inactivo'}, Pregunta ${currentQuestion ? 'presente' : 'ausente'}\n`);
+    if (!currentIsQuizActive || !currentQuestionState) {
+      setSerialOutput(prev => prev + `❌ Respuesta rechazada: Quiz ${currentIsQuizActive ? 'activo' : 'inactivo'}, Pregunta ${currentQuestionState ? 'presente' : 'ausente'}\n`);
       return;
     }
 
@@ -161,29 +257,92 @@ function App() {
       deviceId,
       answer,
       timestamp: new Date().toISOString(),
-      isCorrect: answer === currentQuestion.correctAnswer
+      isCorrect: answer === currentQuestionState.correctAnswer
     };
 
     // Buscar si ya existe una respuesta de este dispositivo
     setAnswers(prev => {
-      const existingAnswerIndex = prev.findIndex(ans => ans.deviceId === deviceId);
+      const currentAnswers = [...prev];
+      const existingAnswerIndex = currentAnswers.findIndex(ans => ans.deviceId === deviceId);
       
       if (existingAnswerIndex !== -1) {
-        // Si existe, sobrescribir la respuesta anterior
-        const updatedAnswers = [...prev];
-        updatedAnswers[existingAnswerIndex] = newAnswer;
-        console.log(`🔄 Respuesta actualizada para dispositivo ${deviceId}: ${answer}`);
+        // Actualizar respuesta existente
+        currentAnswers[existingAnswerIndex] = newAnswer;
         setSerialOutput(prevOutput => prevOutput + `🔄 Respuesta actualizada: Dispositivo ${deviceId} → ${answer}\n`);
-        return updatedAnswers;
+        return currentAnswers;
       } else {
-        // Si no existe, agregar nueva respuesta
-        console.log(`✅ Nueva respuesta registrada para dispositivo ${deviceId}: ${answer}`);
+        // Nueva respuesta
         setSerialOutput(prevOutput => prevOutput + `✅ Respuesta registrada: Dispositivo ${deviceId} → ${answer}\n`);
-        return [...prev, newAnswer];
+        return [...currentAnswers, newAnswer];
       }
     });
+  }, []); // Sin dependencias para evitar stale closures
 
-    console.log(`✅ Respuesta procesada exitosamente:`, newAnswer);
+  /**
+   * Función para reconectar automáticamente los clickers
+   * Asegura una vinculación correcta antes de iniciar una pregunta
+   * PRESERVA el estado del quiz durante la reconexión
+   */
+  const performAutoReconnect = async () => {
+    if (!autoReconnectEnabled) {
+      setSerialOutput(prev => prev + '⚙️ Reconexión automática desactivada\n');
+      return false;
+    }
+
+    if (!isConnected) {
+      setSerialOutput(prev => prev + '📡 No hay clickers conectados para reconectar\n');
+      return false;
+    }
+
+    try {
+      setIsReconnecting(true);
+      setSerialOutput(prev => prev + '🔄 Iniciando reconexión automática...\n');
+      
+      // Guardar el estado actual del quiz antes de desconectar
+      const captureCurrentState = () => ({
+        isActive: isQuizActive,
+        question: currentQuestion,
+        answers: answers,
+        quiz: activeQuiz,
+        questions: quizQuestions,
+        questionIndex: currentQuestionIndex
+      });
+      
+      const currentQuizState = captureCurrentState();
+      setSerialOutput(prev => prev + `💾 Estado del quiz guardado\n`);
+      
+      // Desconectar primero
+      await handleDisconnectSerial();
+      
+      // Esperar un momento antes de reconectar
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Restaurar el estado del quiz antes de reconectar
+      if (currentQuizState.isActive) {
+        setSerialOutput(prev => prev + `🔄 Restaurando estado del quiz...\n`);
+        setIsQuizActive(true);
+        setCurrentQuestion(currentQuizState.question);
+        setAnswers(currentQuizState.answers);
+        setActiveQuiz(currentQuizState.quiz);
+        setQuizQuestions(currentQuizState.questions);
+        setCurrentQuestionIndex(currentQuizState.questionIndex);
+        
+        // Pequeño delay para asegurar que el estado se ha aplicado
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Reconectar automáticamente
+      await handleConnectSerial();
+      
+      setSerialOutput(prev => prev + '✅ Reconexión automática completada exitosamente\n');
+      return true;
+    } catch (error) {
+      console.error('Error en reconexión automática:', error);
+      setSerialOutput(prev => prev + `❌ Error en reconexión automática: ${error.message}\n`);
+      return false;
+    } finally {
+      setIsReconnecting(false);
+    }
   };
 
   /**
@@ -268,16 +427,11 @@ function App() {
 
       socket.on('arduino-data', (data) => {
         try {
-          console.log('🔍 Datos recibidos del simulador:', data);
-          
           if (data.type === 'arduino-data' && data.payload) {
             // Procesar respuesta del simulador como si fuera del Arduino real
             const { deviceId, answer } = data.payload;
-            console.log(`🔍 Datos extraídos - deviceId: ${deviceId}, answer: ${answer}`);
             setSerialOutput(prev => prev + `📡 Simulador virtual: ${deviceId}:${answer}\n`);
             handleAnswer(answer, deviceId);
-          } else {
-            console.log('❌ Datos del simulador en formato incorrecto:', data);
           }
         } catch (error) {
           console.error('Error procesando mensaje del simulador:', error);
@@ -365,6 +519,13 @@ function App() {
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
     };
+  }, [isQuizActive, currentQuestion]);
+
+  // Efecto para monitorear cambios en isQuizActive
+  useEffect(() => {
+    if (!isQuizActive && currentQuestion) {
+      console.warn('Quiz inactivo con pregunta presente - posible problema de estado');
+    }
   }, [isQuizActive, currentQuestion]);
 
   // Efecto para leer datos del puerto serie
@@ -511,12 +672,22 @@ function App() {
                 </button>
 
                 {isConnected && (
-                  <button
-                    onClick={handleDisconnectSerial}
-                    className="disconnect-serial-button"
-                  >
-                    🔌 Desconectar
-                  </button>
+                  <>
+                    <button
+                      onClick={handleDisconnectSerial}
+                      className="disconnect-serial-button"
+                    >
+                      🔌 Desconectar
+                    </button>
+                    
+                    <button
+                      onClick={performAutoReconnect}
+                      disabled={isReconnecting}
+                      className="reconnect-button"
+                    >
+                      {isReconnecting ? '🔄 Reconectando...' : '🔄 Reconectar'}
+                    </button>
+                  </>
                 )}
 
                 {serialOutput && (
@@ -536,6 +707,44 @@ function App() {
                 <span className="status-text">
                   {isConnected ? 'Clicker conectado' : 'Clicker desconectado'}
                 </span>
+                {isReconnecting && (
+                  <span className="reconnecting-indicator">
+                    🔄 Reconectando...
+                  </span>
+                )}
+              </div>
+
+              {/* Configuración de reconexión automática */}
+              <div className="auto-reconnect-config">
+                <label className="auto-reconnect-toggle">
+                  <input
+                    type="checkbox"
+                    checked={autoReconnectEnabled}
+                    onChange={(e) => setAutoReconnectEnabled(e.target.checked)}
+                  />
+                  <span className="checkbox-label">
+                    🔄 Reconexión automática 
+                    <small>(Reconecta clickers al iniciar cada pregunta)</small>
+                  </span>
+                </label>
+                
+                {autoReconnectEnabled && (
+                  <div className="delay-config">
+                    <label className="delay-label">
+                      ⏱️ Delay de reconexión: 
+                      <select 
+                        value={reconnectDelay} 
+                        onChange={(e) => setReconnectDelay(parseInt(e.target.value))}
+                        className="delay-select"
+                      >
+                        <option value={200}>200ms (Rápido)</option>
+                        <option value={500}>500ms (Recomendado)</option>
+                        <option value={1000}>1000ms (Seguro)</option>
+                        <option value={2000}>2000ms (Muy seguro)</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           )}

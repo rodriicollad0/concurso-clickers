@@ -471,3 +471,115 @@
     max-height: 120px;
   }
 }
+
+/* Estilos para reconexión automática */
+.reconnecting-indicator {
+  margin-left: 10px;
+  font-size: 0.875rem;
+  color: #f59e0b;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+}
+
+.auto-reconnect-config {
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(249, 250, 251, 0.8);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.auto-reconnect-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auto-reconnect-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.checkbox-label small {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.auto-reconnect-toggle:hover .checkbox-label {
+  color: #1f2937;
+}
+
+/* Configuración de delay */
+.delay-config {
+  margin-top: 10px;
+  padding-left: 28px;
+}
+
+.delay-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.delay-select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.delay-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+/* Botón de reconexión manual */
+.reconnect-button {
+  background-color: #f59e0b;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  font-size: 0.875rem;
+}
+
+.reconnect-button:hover:not(:disabled) {
+  background-color: #d97706;
+}
+
+.reconnect-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Animación para el indicador de reconexión */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
