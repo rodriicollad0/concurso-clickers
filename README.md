@@ -408,7 +408,7 @@ Desarrollado por **Rodrigo Collado**
 ## 📚 Plan de Desarrollo
 
 ### ✅ Completado (Frontend + Hardware)
-- [x] Sistema transformado de peluquería → concursos
+- [x] Sistema completo de concursos interactivos
 - [x] Componente `QuizDisplay` para mostrar preguntas
 - [x] Componente `ClickerResults` para resultados en tiempo real
 - [x] Web Serial API para recibir respuestas de clickers
@@ -653,26 +653,40 @@ Para usar en Android:
    - Habilitar
    - Reiniciar Chrome
 
-## 🔌 Protocolo Serial
+## 🔌 Protocolo de Comunicación
 
-La app envía datos en formato:
+El sistema de clickers utiliza el siguiente protocolo de comunicación:
+
+### Formato de Respuesta (Arduino → Frontend)
 ```
-NUEVA_RESERVA:Nombre|Servicio|Fecha|Hora
+DEVICE_ID:ANSWER\n
 ```
 
-### Ejemplo Arduino:
+**Ejemplos:**
+- `001:A\n` - Clicker 001 selecciona opción A
+- `002:B\n` - Clicker 002 selecciona opción B
+- `001:C\n` - Clicker 001 selecciona opción C
+
+### Configuración Serial
+- **Velocidad**: 9600 baudios
+- **Terminador**: Salto de línea (`\n`)
+- **Formato**: ASCII plano
+
+### Ejemplo de Código Arduino
 ```cpp
+const int DEVICE_ID = 1;  // ID único del clicker
+
 void setup() {
   Serial.begin(9600);
+  // Configurar botones...
 }
 
 void loop() {
-  if (Serial.available()) {
-    String data = Serial.readString();
-    if (data.startsWith("NUEVA_RESERVA:")) {
-      // Procesar reserva
-      Serial.println("RESERVA_RECIBIDA");
-    }
+  char selectedAnswer = getButtonPress(); // A, B, C, D
+  if (selectedAnswer != 0) {
+    String response = String(DEVICE_ID, DEC) + ":" + String(selectedAnswer) + "\n";
+    Serial.print(response);
+    delay(100); // Debounce
   }
 }
 ```
