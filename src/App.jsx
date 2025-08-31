@@ -425,6 +425,40 @@ function App() {
         setSerialOutput(prev => prev + '🔌 Socket.IO conectado al simulador virtual\n');
       });
 
+      // ✨ NUEVO: Manejar solicitud de auto-registro del clicker virtual
+      socket.on('clicker:auto-register-request', async (data) => {
+        try {
+          setSerialOutput(prev => prev + `🎯 Auto-registrando clicker virtual: ${data.clickerId}\n`);
+          
+          // Conectar al backend para registrar automáticamente
+          const backendSocket = io('http://localhost:3000');
+          
+          backendSocket.on('connect', () => {
+            // Enviar solicitud de auto-registro al backend
+            backendSocket.emit('clicker:auto-register', {
+              clickerId: data.clickerId,
+              name: data.name || `Virtual Clicker ${data.clickerId}`
+            });
+            
+            setSerialOutput(prev => prev + `✅ Clicker ${data.clickerId} registrado automáticamente\n`);
+          });
+
+          backendSocket.on('clicker:auto-register:success', (response) => {
+            setSerialOutput(prev => prev + `🎉 Clicker auto-registrado exitosamente: ${response.clickerId}\n`);
+            backendSocket.disconnect();
+          });
+
+          backendSocket.on('clicker:auto-register:error', (error) => {
+            setSerialOutput(prev => prev + `❌ Error auto-registrando clicker: ${error.error}\n`);
+            backendSocket.disconnect();
+          });
+
+        } catch (error) {
+          console.error('Error en auto-registro:', error);
+          setSerialOutput(prev => prev + `❌ Error en auto-registro: ${error.message}\n`);
+        }
+      });
+
       socket.on('arduino-data', (data) => {
         try {
           if (data.type === 'arduino-data' && data.payload) {

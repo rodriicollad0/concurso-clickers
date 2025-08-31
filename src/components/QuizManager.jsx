@@ -73,6 +73,20 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
     orderIndex: 1
   });
 
+  // Estados para edición de preguntas
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [editQuestion, setEditQuestion] = useState({
+    quizId: null,
+    questionText: '',
+    optionA: '',
+    optionB: '',
+    optionC: '',
+    optionD: '',
+    correctAnswer: 'A',
+    timeLimit: 30,
+    orderIndex: 1
+  });
+
   // Estados para resultados y respuestas
   const [quizResults, setQuizResults] = useState(null);
   const [questionAnswers, setQuestionAnswers] = useState([]);
@@ -713,6 +727,12 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
   const updateQuestion = async (questionId, questionData) => {
     try {
       setLoading(true);
+      console.log('Enviando actualización de pregunta:', {
+        url: `${API_BASE}/quiz/questions/${questionId}`,
+        method: 'PUT',
+        body: questionData
+      });
+
       const response = await fetch(`${API_BASE}/quiz/questions/${questionId}`, {
         method: 'PUT',
         headers: {
@@ -721,21 +741,91 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
         body: JSON.stringify(questionData),
       });
 
+      console.log('Respuesta del servidor:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
       if (response.ok) {
         const updatedQuestion = await response.json();
+        console.log('Pregunta actualizada recibida del servidor:', updatedQuestion);
         setQuestions(prev => prev.map(q => q.id === questionId ? updatedQuestion : q));
         setSuccess('Pregunta actualizada exitosamente');
         return updatedQuestion;
       } else {
-        setError('Error al actualizar la pregunta');
+        const errorText = await response.text();
+        console.error('Error del servidor:', errorText);
+        setError(`Error al actualizar la pregunta: ${response.status} ${response.statusText}`);
         return null;
       }
     } catch (err) {
+      console.error('Error de conexión:', err);
       setError('Error de conexión');
-      console.error('Error:', err);
       return null;
     } finally {
       setLoading(false);
+    }
+  };
+
+  /**
+   * Iniciar edición de una pregunta
+   */
+  const startEditingQuestion = (question) => {
+    setEditingQuestion(question.id);
+    setEditQuestion({
+      quizId: question.quizId,
+      questionText: question.questionText,
+      optionA: question.optionA,
+      optionB: question.optionB,
+      optionC: question.optionC,
+      optionD: question.optionD,
+      correctAnswer: question.correctAnswer,
+      timeLimit: question.timeLimit,
+      orderIndex: question.orderIndex
+    });
+  };
+
+  /**
+   * Cancelar edición de pregunta
+   */
+  const cancelEditingQuestion = () => {
+    setEditingQuestion(null);
+    setEditQuestion({
+      quizId: null,
+      questionText: '',
+      optionA: '',
+      optionB: '',
+      optionC: '',
+      optionD: '',
+      correctAnswer: 'A',
+      timeLimit: 30,
+      orderIndex: 1
+    });
+  };
+
+  /**
+   * Guardar cambios de pregunta editada
+   */
+  const saveEditedQuestion = async () => {
+    if (!editQuestion.questionText.trim() || !editQuestion.optionA.trim() || 
+        !editQuestion.optionB.trim() || !editQuestion.optionC.trim() || 
+        !editQuestion.optionD.trim()) {
+      setError('Todos los campos de la pregunta son obligatorios');
+      return;
+    }
+
+    console.log('Guardando pregunta editada:', {
+      questionId: editingQuestion,
+      questionData: editQuestion
+    });
+
+    const result = await updateQuestion(editingQuestion, editQuestion);
+    if (result) {
+      console.log('Pregunta actualizada exitosamente:', result);
+      cancelEditingQuestion();
+    } else {
+      console.log('Error al actualizar la pregunta');
     }
   };
 
@@ -1297,42 +1387,136 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
           <div className="questions-grid">
             {questions.map((question, index) => (
               <div key={question.id} className="question-card">
-                <div className="question-header">
-                  <h4>Pregunta {index + 1}</h4>
-                  <div className="question-actions">
-                    <button 
-                      className="btn btn-small btn-primary"
-                      onClick={() => startQuestion(question.id)}
-                      disabled={activeQuestion?.id === question.id}
-                    >
-                      {activeQuestion?.id === question.id ? '🔴 Activa' : '▶️ Iniciar'}
-                    </button>
-                    <button 
-                      className="btn btn-small btn-secondary"
-                      onClick={() => loadQuestionAnswers(question.id)}
-                    >
-                      📊 Ver Respuestas
-                    </button>
-                  </div>
-                </div>
-                
-                <p className="question-text">{question.questionText}</p>
-                
-                <div className="question-options">
-                  {['A', 'B', 'C', 'D'].map(option => (
-                    <div 
-                      key={option} 
-                      className={`option ${question.correctAnswer === option ? 'correct' : ''}`}
-                    >
-                      <strong>{option}:</strong> {question[`option${option}`]}
-                      {question.correctAnswer === option && ' ✓'}
+                {editingQuestion === question.id ? (
+                  // Formulario de edición
+                  <div className="edit-question-form">
+                    <div className="question-header">
+                      <h4>Editando Pregunta {index + 1}</h4>
+                      <div className="question-actions">
+                        <button 
+                          className="btn btn-small btn-success"
+                          onClick={saveEditedQuestion}
+                          disabled={loading}
+                        >
+                          💾 Guardar
+                        </button>
+                        <button 
+                          className="btn btn-small btn-secondary"
+                          onClick={cancelEditingQuestion}
+                        >
+                          ❌ Cancelar
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
-                
-                <div className="question-meta">
-                  <span>⏱️ {question.timeLimit}s</span>
-                </div>
+
+                    <div className="form-group">
+                      <label>Texto de la pregunta:</label>
+                      <textarea
+                        value={editQuestion.questionText}
+                        onChange={(e) => setEditQuestion(prev => ({ ...prev, questionText: e.target.value }))}
+                        placeholder="Ingresa el texto de la pregunta"
+                        rows="3"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div className="options-grid">
+                      {['A', 'B', 'C', 'D'].map(option => (
+                        <div key={option} className="form-group">
+                          <label>Opción {option}:</label>
+                          <input
+                            type="text"
+                            value={editQuestion[`option${option}`]}
+                            onChange={(e) => setEditQuestion(prev => ({ ...prev, [`option${option}`]: e.target.value }))}
+                            placeholder={`Opción ${option}`}
+                            disabled={loading}
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Respuesta correcta:</label>
+                        <select
+                          value={editQuestion.correctAnswer}
+                          onChange={(e) => setEditQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))}
+                          disabled={loading}
+                        >
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Tiempo límite (segundos):</label>
+                        <input
+                          type="number"
+                          min="10"
+                          max="300"
+                          value={editQuestion.timeLimit}
+                          onChange={(e) => setEditQuestion(prev => ({ ...prev, timeLimit: parseInt(e.target.value) }))}
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Vista normal de la pregunta
+                  <>
+                    <div className="question-header">
+                      <h4>Pregunta {index + 1}</h4>
+                      <div className="question-actions">
+                        <button 
+                          className="btn btn-small btn-primary"
+                          onClick={() => startQuestion(question.id)}
+                          disabled={activeQuestion?.id === question.id}
+                        >
+                          {activeQuestion?.id === question.id ? '🔴 Activa' : '▶️ Iniciar'}
+                        </button>
+                        <button 
+                          className="btn btn-small btn-warning"
+                          onClick={() => startEditingQuestion(question)}
+                          disabled={loading}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button 
+                          className="btn btn-small btn-danger"
+                          onClick={() => deleteQuestion(question.id)}
+                          disabled={loading}
+                        >
+                          🗑️ Eliminar
+                        </button>
+                        <button 
+                          className="btn btn-small btn-secondary"
+                          onClick={() => loadQuestionAnswers(question.id)}
+                        >
+                          📊 Ver Respuestas
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <p className="question-text">{question.questionText}</p>
+                    
+                    <div className="question-options">
+                      {['A', 'B', 'C', 'D'].map(option => (
+                        <div 
+                          key={option} 
+                          className={`option ${question.correctAnswer === option ? 'correct' : ''}`}
+                        >
+                          <strong>{option}:</strong> {question[`option${option}`]}
+                          {question.correctAnswer === option && ' ✓'}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="question-meta">
+                      <span>⏱️ {question.timeLimit}s</span>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>

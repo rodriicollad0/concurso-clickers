@@ -6,7 +6,17 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): any {
+  getHello(): string {
     return this.appService.getHello();
+  }
+
+  // 🩺 Health check endpoint para Render
+  @Get('health')
+  getHealth() {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'quiz-backend'
+    };
   }
 }

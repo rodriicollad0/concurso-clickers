@@ -36,36 +36,36 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   // =============== GATEWAY LIFECYCLE ===============
 
   afterInit(server: Server) {
-    this.logger.log('🚀 WebSocket Gateway initialized');
+    this.logger.log('WebSocket Gateway initialized');
     this.setupRedisSubscriptions();
   }
 
   private async setupRedisSubscriptions() {
-    // 🚀 REDIS: Subscribirse a eventos de respuestas
+    // REDIS: Subscribirse a eventos de respuestas
     await this.redisService.subscribe('quiz:answer:received', (message) => {
       const data = JSON.parse(message);
       this.server.emit('answer:received', data);
     });
 
-    // 🚀 REDIS: Subscribirse a cambios de estado del quiz
+    // REDIS: Subscribirse a cambios de estado del quiz
     await this.redisService.subscribe('quiz:state:changed', (message) => {
       const data = JSON.parse(message);
       this.server.emit('quiz:state:changed', data);
     });
 
-    // 🚀 REDIS: Subscribirse a cambios de pregunta
+    // REDIS: Subscribirse a cambios de pregunta
     await this.redisService.subscribe('quiz:question:changed', (message) => {
       const data = JSON.parse(message);
       this.server.emit('quiz:question:changed', data);
     });
 
-    // 🚀 REDIS: Subscribirse a actualizaciones del leaderboard
+    // REDIS: Subscribirse a actualizaciones del leaderboard
     await this.redisService.subscribe('quiz:leaderboard:updated', (message) => {
       const data = JSON.parse(message);
       this.server.emit('quiz:leaderboard:updated', data);
     });
 
-    this.logger.log('✅ Redis subscriptions configured');
+    this.logger.log('Redis subscriptions configured');
   }
 
   // =============== CONNECTION MANAGEMENT ===============
@@ -74,7 +74,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     this.logger.log(`Client connected: ${client.id}`);
     this.connectedClients.set(client.id, { socket: client });
     
-    // 🚀 REDIS: Enviar estado actual del quiz
+    // REDIS: Enviar estado actual del quiz
     const activeQuizInfo = await this.quizService.getActiveQuizInfo();
     
     this.server.to(client.id).emit('connection:established', {
@@ -89,7 +89,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     const clientData = this.connectedClients.get(client.id);
     
     if (clientData?.clickerId) {
-      // 🚀 REDIS: Remover del quiz activo
+      // REDIS: Remover del quiz activo
       const activeQuizId = await this.redisService.getActiveQuiz();
       if (activeQuizId) {
         await this.redisService.removeParticipant(activeQuizId, clientData.clickerId);
@@ -113,12 +113,12 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     @ConnectedSocket() client: Socket,
   ) {
     try {
-      // 🚀 ULTRA-RÁPIDO: Respuesta se guarda en Redis primero
+      // ULTRA-RÁPIDO: Respuesta se guarda en Redis primero
       const answer = await this.quizService.submitAnswer(data);
       
-      this.logger.log(`⚡ Answer submitted: ${data.clickerId} -> ${data.selectedAnswer} for question ${data.questionId}`);
+      this.logger.log(`Answer submitted: ${data.clickerId} -> ${data.selectedAnswer} for question ${data.questionId}`);
       
-      // 🚀 REDIS: Publicar evento para múltiples servidores
+      // REDIS: Publicar evento para múltiples servidores
       const answerEvent = {
         questionId: data.questionId,
         clickerId: data.clickerId,
@@ -141,7 +141,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         timestamp: new Date().toISOString(),
       });
 
-      // 🚀 REDIS: Actualizar leaderboard si es correcta
+      // REDIS: Actualizar leaderboard si es correcta
       if (answer.isCorrect) {
         const question = await this.quizService.findQuestionById(data.questionId);
         const leaderboard = await this.quizService.getQuizLeaderboard(question.quizId, 10);
@@ -161,7 +161,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       });
       
     } catch (error) {
-      this.logger.error(`❌ Error submitting answer:`, error);
+      this.logger.error(`Error submitting answer:`, error);
       client.emit('answer:submit:error', {
         questionId: data.questionId,
         error: error.message,
@@ -186,7 +186,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
         this.connectedClients.set(client.id, clientData);
       }
       
-      this.logger.log(`🎯 Clicker registered: ${data.clickerId}`);
+      this.logger.log(`Clicker registered: ${data.clickerId}`);
       
       // Obtener estadísticas del participante
       const stats = await this.quizService.getParticipantStats(data.clickerId);
@@ -206,8 +206,54 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       });
       
     } catch (error) {
-      this.logger.error(`❌ Error registering clicker:`, error);
+      this.logger.error(`Error registering clicker:`, error);
       client.emit('clicker:register:error', {
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+
+  @SubscribeMessage('clicker:auto-register')
+  async handleClickerAutoRegister(
+    @MessageBody() data: { clickerId: string; name?: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      this.logger.log(`Auto-registering clicker: ${data.clickerId}`);
+      
+      // Registrar participante automáticamente
+      const participant = await this.quizService.registerParticipant(data.clickerId, data.name);
+      
+      // Actualizar información del cliente
+      const clientData = this.connectedClients.get(client.id);
+      if (clientData) {
+        clientData.clickerId = data.clickerId;
+        this.connectedClients.set(client.id, clientData);
+      }
+      
+      this.logger.log(`Clicker auto-registered: ${data.clickerId}`);
+      
+      // Obtener estadísticas del participante
+      const stats = await this.quizService.getParticipantStats(data.clickerId);
+      
+      client.emit('clicker:auto-register:success', {
+        clickerId: data.clickerId,
+        participant,
+        stats,
+        timestamp: new Date().toISOString(),
+      });
+      
+      // Notificar a otros clientes que se conectó un clicker automáticamente
+      this.server.emit('clicker:auto-connected', {
+        clickerId: data.clickerId,
+        name: data.name || data.clickerId,
+        timestamp: new Date().toISOString(),
+      });
+      
+    } catch (error) {
+      this.logger.error(`Error auto-registering clicker:`, error);
+      client.emit('clicker:auto-register:error', {
         error: error.message,
         timestamp: new Date().toISOString(),
       });
@@ -225,7 +271,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       });
       
     } catch (error) {
-      this.logger.error(`❌ Error getting quiz status:`, error);
+      this.logger.error(`Error getting quiz status:`, error);
       client.emit('quiz:status:error', {
         error: error.message,
         timestamp: new Date().toISOString(),
@@ -248,7 +294,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       });
       
     } catch (error) {
-      this.logger.error(`❌ Error getting question stats:`, error);
+      this.logger.error(`Error getting question stats:`, error);
       client.emit('question:stats:error', {
         questionId: data.questionId,
         error: error.message,
@@ -272,7 +318,7 @@ export class QuizGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       });
       
     } catch (error) {
-      this.logger.error(`❌ Error getting leaderboard:`, error);
+      this.logger.error(`Error getting leaderboard:`, error);
       client.emit('leaderboard:error', {
         quizId: data.quizId,
         error: error.message,

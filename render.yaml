@@ -1,4 +1,5 @@
 services:
+  # Frontend React App
   - type: web
     name: concurso-clicker-app
     env: static
@@ -24,3 +25,33 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # Quiz Backend API
+  - type: web
+    name: quiz-backend
+    env: node
+    plan: free
+    rootDir: ./quiz-backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    healthCheckPath: /health
+
+  # Virtual Clicker Simulator
+  - type: web
+    name: virtual-clicker
+    env: node
+    plan: free
+    rootDir: ./virtual-clicker
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: QUIZ_BACKEND_URL
+        sync: false # Se configurará manualmente con la URL del backend
+    healthCheckPath: /api/status

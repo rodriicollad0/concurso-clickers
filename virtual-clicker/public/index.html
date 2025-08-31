@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 Arduino Clicker Virtual</title>
+    <title>Arduino Clicker Virtual</title>
     <style>
         * {
             margin: 0;
@@ -253,7 +253,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1 class="title">🎮 Arduino Clicker Virtual</h1>
+            <h1 class="title">Arduino Clicker Virtual</h1>
             <p class="subtitle">Simulador de dispositivo clicker para concursos</p>
         </div>
 
@@ -295,13 +295,13 @@
         </div>
 
         <div class="instructions">
-            <strong>📝 Instrucciones:</strong><br>
+            <strong>Instrucciones:</strong><br>
             1. Conecta tu aplicación web principal al puerto serie<br>
             2. Usa estos botones para simular respuestas del clicker<br>
             3. Las respuestas se enviarán automáticamente a tu app<br>
             
             <div class="keyboard-shortcuts">
-                <strong>⌨️ Atajos de teclado:</strong> A, B, C, D
+                <strong>Atajos de teclado:</strong> A, B, C, D
             </div>
         </div>
     </div>
@@ -327,6 +327,9 @@
                 
                 socket.on('connect', () => {
                     addLogEntry('🔌 Socket.IO conectado');
+                    
+                    // AUTO-REGISTRO: Conectar automáticamente al backend del quiz
+                    connectToQuizBackend();
                 });
 
                 socket.on('disconnect', () => {
@@ -340,6 +343,65 @@
 
             } catch (error) {
                 addLogEntry(`❌ Error Socket.IO: ${error.message}`);
+            }
+        }
+
+        // NUEVA FUNCIÓN: Conectar automáticamente al backend del quiz
+        async function connectToQuizBackend() {
+            try {
+                addLogEntry('Conectando al sistema de quiz...');
+                
+                //  Detectar automáticamente la URL del backend
+                const currentHost = window.location.hostname;
+                let quizBackendUrl;
+                
+                if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                    // Desarrollo local
+                    quizBackendUrl = `http://${currentHost}:3000`;
+                } else {
+                    // Producción en Render - usar HTTPS y puerto estándar
+                    quizBackendUrl = `https://quiz-backend-YOUR_BACKEND_URL.onrender.com`;
+                }
+                
+                addLogEntry(`📡 Intentando conectar a: ${quizBackendUrl}`);
+                
+                const quizSocket = io(quizBackendUrl, {
+                    autoConnect: false,  // No conectar automáticamente
+                    reconnection: false, // Desactivar reconexión automática
+                    timeout: 5000        // Timeout de 5 segundos
+                });
+                
+                quizSocket.on('connect', () => {
+                    addLogEntry('✅ Conectado al sistema de quiz');
+                    
+                    // Auto-registrar este clicker como participante
+                    quizSocket.emit('clicker:auto-register', {
+                        clickerId: currentDeviceId,
+                        name: `Virtual Clicker ${currentDeviceId}`
+                    });
+                });
+
+                quizSocket.on('clicker:auto-register:success', (data) => {
+                    addLogEntry(`Auto-registrado como participante: ${data.clickerId}`);
+                    quizSocket.disconnect(); // Desconectar después del registro
+                });
+
+                quizSocket.on('clicker:auto-register:error', (data) => {
+                    addLogEntry(`❌ Error en auto-registro: ${data.error}`);
+                    quizSocket.disconnect();
+                });
+
+                quizSocket.on('connect_error', (error) => {
+                    addLogEntry(`❌ Error conectando al quiz: No se pudo conectar al backend`);
+                    addLogEntry(`ℹ️  El clicker funcionará sin conexión al quiz`);
+                });
+
+                // Intentar conectar manualmente
+                quizSocket.connect();
+
+            } catch (error) {
+                addLogEntry(`❌ Error conectando al quiz: ${error.message}`);
+                addLogEntry(`ℹ️  El clicker funcionará sin conexión al quiz`);
             }
         }
 
@@ -411,7 +473,7 @@
                 
                 if (result.success) {
                     currentDeviceId = result.deviceId;
-                    addLogEntry(`🔧 ID cambiado a: ${currentDeviceId}`);
+                    addLogEntry(`ID cambiado a: ${currentDeviceId}`);
                 } else {
                     alert(`Error: ${result.error}`);
                 }

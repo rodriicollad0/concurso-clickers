@@ -25,7 +25,7 @@ export class QuizService {
     const quiz = this.quizRepository.create(createQuizDto);
     const savedQuiz = await this.quizRepository.save(quiz);
     
-    // 🚀 REDIS: Cachear estado inicial del quiz
+    // REDIS: Cachear estado inicial del quiz
     await this.redisService.setQuizState(savedQuiz.id, {
       id: savedQuiz.id,
       title: savedQuiz.title,
@@ -47,7 +47,7 @@ export class QuizService {
   }
 
   async findQuizById(id: number): Promise<Quiz> {
-    // 🚀 REDIS: Intentar obtener del cache primero
+    // REDIS: Intentar obtener del cache primero
     const cachedQuiz = await this.redisService.getQuizState(id);
     
     const quiz = await this.quizRepository.findOne({
@@ -59,7 +59,7 @@ export class QuizService {
       throw new NotFoundException(`Quiz with ID ${id} not found`);
     }
 
-    // 🚀 REDIS: Actualizar cache si no existe o está desactualizado
+    // REDIS: Actualizar cache si no existe o está desactualizado
     if (!cachedQuiz) {
       await this.redisService.setQuizState(id, {
         id: quiz.id,
@@ -80,7 +80,7 @@ export class QuizService {
     Object.assign(quiz, updateQuizDto);
     const updatedQuiz = await this.quizRepository.save(quiz);
     
-    // 🚀 REDIS: Actualizar cache
+    // REDIS: Actualizar cache
     await this.redisService.setQuizState(id, {
       id: updatedQuiz.id,
       title: updatedQuiz.title,
@@ -98,7 +98,7 @@ export class QuizService {
     const quiz = await this.findQuizById(id);
     await this.quizRepository.remove(quiz);
     
-    // 🚀 REDIS: Limpiar todos los datos del cache
+    // REDIS: Limpiar todos los datos del cache
     await this.redisService.clearQuizData(id);
   }
 
@@ -111,13 +111,13 @@ export class QuizService {
       const firstQuestion = quiz.questions.sort((a, b) => a.orderIndex - b.orderIndex)[0];
       quiz.currentQuestionId = firstQuestion.id;
       
-      // 🚀 REDIS: Establecer pregunta activa
+      // REDIS: Establecer pregunta activa
       await this.redisService.setActiveQuestion(id, firstQuestion.id);
     }
     
     const updatedQuiz = await this.quizRepository.save(quiz);
     
-    // 🚀 REDIS: Marcar como quiz activo y actualizar estado
+    // REDIS: Marcar como quiz activo y actualizar estado
     await this.redisService.setActiveQuiz(id);
     await this.redisService.setQuizState(id, {
       id: updatedQuiz.id,
@@ -138,7 +138,7 @@ export class QuizService {
     quiz.currentQuestionId = null;
     const updatedQuiz = await this.quizRepository.save(quiz);
     
-    // 🚀 REDIS: Actualizar estado y limpiar quiz activo
+    // REDIS: Actualizar estado y limpiar quiz activo
     await this.redisService.del('quiz:active');
     await this.redisService.setQuizState(id, {
       id: updatedQuiz.id,
@@ -198,11 +198,11 @@ export class QuizService {
     
     const question = await this.findQuestionById(questionId);
     
-    // 🚀 REDIS: Establecer pregunta activa con TTL si tiene tiempo límite
+    // REDIS: Establecer pregunta activa con TTL si tiene tiempo límite
     const ttl = question.timeLimit ? question.timeLimit : undefined;
     await this.redisService.setActiveQuestion(quizId, questionId, ttl);
     
-    // 🚀 REDIS: Guardar estado de la pregunta
+    // REDIS: Guardar estado de la pregunta
     await this.redisService.setQuestionState(questionId, {
       id: question.id,
       quizId: question.quizId,
@@ -219,7 +219,7 @@ export class QuizService {
       isActive: true,
     }, ttl);
     
-    // 🚀 REDIS: Limpiar respuestas anteriores
+    // REDIS: Limpiar respuestas anteriores
     await this.redisService.del(`answers:question:${questionId}`);
     
     return question;
@@ -232,10 +232,10 @@ export class QuizService {
     quiz.currentQuestionId = null;
     const updatedQuiz = await this.quizRepository.save(quiz);
     
-    // 🚀 REDIS: Limpiar pregunta activa
+    // REDIS: Limpiar pregunta activa
     await this.redisService.del(`quiz:${quizId}:current_question`);
     
-    // 🚀 REDIS: Marcar pregunta como inactiva
+    // REDIS: Marcar pregunta como inactiva
     if (currentQuestionId) {
       const questionState = await this.redisService.getQuestionState(currentQuestionId);
       if (questionState) {
@@ -252,13 +252,13 @@ export class QuizService {
   async submitAnswer(submitAnswerDto: SubmitAnswerDto): Promise<Answer> {
     const { clickerId, questionId, selectedAnswer, responseTime } = submitAnswerDto;
 
-    // 🚀 REDIS: Verificar que la pregunta esté activa
+    // REDIS: Verificar que la pregunta esté activa
     const questionState = await this.redisService.getQuestionState(questionId);
     if (!questionState || !questionState.isActive) {
       throw new NotFoundException(`Question ${questionId} is not active`);
     }
 
-    // 🚀 REDIS: Verificar respuesta duplicada en cache primero
+    // REDIS: Verificar respuesta duplicada en cache primero
     const existingAnswers = await this.redisService.getAnswers(questionId);
     const existingAnswer = existingAnswers.find(answer => answer.clickerId === clickerId);
 
@@ -290,7 +290,7 @@ export class QuizService {
           });
           participant = await this.participantRepository.save(participant);
           
-          // 🚀 REDIS: Agregar participante
+          // REDIS: Agregar participante
           await this.redisService.addParticipant(question.quizId, clickerId);
         }
 
@@ -320,7 +320,7 @@ export class QuizService {
         });
         participant = await this.participantRepository.save(participant);
         
-        // 🚀 REDIS: Agregar participante
+        // REDIS: Agregar participante
         await this.redisService.addParticipant(question.quizId, clickerId);
       }
 
@@ -335,7 +335,7 @@ export class QuizService {
       answer = await this.answerRepository.save(answer);
     }
 
-    // 🚀 REDIS: Almacenar respuesta en cache INMEDIATAMENTE
+    // REDIS: Almacenar respuesta en cache INMEDIATAMENTE
     await this.redisService.addAnswer(questionId, {
       clickerId,
       selectedAnswer,
@@ -344,10 +344,10 @@ export class QuizService {
       answerId: answer.id,
     });
 
-    // 🚀 REDIS: Actualizar estadísticas en tiempo real
+    // REDIS: Actualizar estadísticas en tiempo real
     await this.redisService.incrementAnswerStat(questionId, selectedAnswer);
 
-    // 🚀 REDIS: Actualizar leaderboard si es correcta
+    // REDIS: Actualizar leaderboard si es correcta
     if (isCorrect) {
       const question = await this.findQuestionById(questionId);
       const currentScore = await this.redisService.zscore(`leaderboard:quiz:${question.quizId}`, clickerId) || 0;
@@ -358,7 +358,7 @@ export class QuizService {
   }
 
   async getAnswersByQuestionId(questionId: number): Promise<Answer[]> {
-    // 🚀 REDIS: Intentar obtener de cache primero
+    // REDIS: Intentar obtener de cache primero
     const cachedAnswers = await this.redisService.getAnswers(questionId);
     
     if (cachedAnswers.length > 0) {
@@ -424,7 +424,7 @@ export class QuizService {
     }> = [];
     
     for (const question of questions) {
-      // 🚀 REDIS: Usar estadísticas de cache para mayor velocidad
+      // REDIS: Usar estadísticas de cache para mayor velocidad
       const stats = await this.redisService.getAnswerStats(question.id);
       const answers = await this.getAnswersByQuestionId(question.id);
       
@@ -546,7 +546,7 @@ export class QuizService {
         participant = await this.participantRepository.save(participant);
       }
       
-      // 🚀 REDIS: Asegurar que esté registrado en el quiz activo
+      // REDIS: Asegurar que esté registrado en el quiz activo
       const activeQuizId = await this.redisService.getActiveQuiz();
       if (activeQuizId) {
         await this.redisService.addParticipant(activeQuizId, clickerId);
@@ -562,7 +562,7 @@ export class QuizService {
 
     const savedParticipant = await this.participantRepository.save(participant);
     
-    // 🚀 REDIS: Registrar en el quiz activo si existe
+    // REDIS: Registrar en el quiz activo si existe
     const activeQuizId = await this.redisService.getActiveQuiz();
     if (activeQuizId) {
       await this.redisService.addParticipant(activeQuizId, clickerId);
@@ -580,7 +580,7 @@ export class QuizService {
   }
 
   async getParticipantStats(clickerId: string) {
-    // 🚀 REDIS: Obtener estadísticas del quiz activo primero
+    // REDIS: Obtener estadísticas del quiz activo primero
     const activeQuizId = await this.redisService.getActiveQuiz();
     
     if (activeQuizId) {
@@ -664,7 +664,7 @@ export class QuizService {
       throw new NotFoundException(`Participant with ID ${id} not found`);
     }
 
-    // 🚀 REDIS: Remover de todos los quizzes activos
+    // REDIS: Remover de todos los quizzes activos
     const activeQuizId = await this.redisService.getActiveQuiz();
     if (activeQuizId) {
       await this.redisService.removeParticipant(activeQuizId, participant.clickerId);

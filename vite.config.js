@@ -9,4 +9,13 @@ export default defineConfig({
       plugins: [], // Array vacío para deshabilitar todos los plugins de PostCSS
     },
   },
+  // 🎬 Configuración para video demostración
+  preview: {
+    port: 5173,
+    host: false // Solo localhost, sin mostrar IPs de red
+  },
+  server: {
+    port: 5173,
+    host: false // Solo localhost, sin mostrar IPs de red
+  }
 })

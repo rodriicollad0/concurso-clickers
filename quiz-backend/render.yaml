@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: quiz-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        generateValue: true
+      - key: REDIS_URL
+        generateValue: true
+    healthCheckPath: /health
