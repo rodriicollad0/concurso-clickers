@@ -430,8 +430,22 @@ function App() {
         try {
           setSerialOutput(prev => prev + `🎯 Auto-registrando clicker virtual: ${data.clickerId}\n`);
           
+          // Configuración del WebSocket - detectar entorno automáticamente
+          const getBackendUrl = () => {
+            if (window.location.hostname.includes('onrender.com')) {
+              return 'https://quiz-backend-299n.onrender.com';
+            }
+            if (import.meta.env.VITE_BACKEND_WS_URL) {
+              return import.meta.env.VITE_BACKEND_WS_URL;
+            }
+            return 'http://localhost:3000';
+          };
+          
+          const backendUrl = getBackendUrl();
+          console.log('🔗 WebSocket Backend URL:', backendUrl);
+          
           // Conectar al backend para registrar automáticamente
-          const backendSocket = io(import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:3000');
+          const backendSocket = io(backendUrl);
           
           backendSocket.on('connect', () => {
             // Enviar solicitud de auto-registro al backend

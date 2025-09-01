@@ -101,7 +101,24 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
   // Estados para pregunta activa
   const [activeQuestion, setActiveQuestion] = useState(null);
 
-  const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api`;
+  // Configuración de API - detectar entorno automáticamente
+  const getApiBase = () => {
+    // Si estamos en Render (producción)
+    if (window.location.hostname.includes('onrender.com')) {
+      return 'https://quiz-backend-299n.onrender.com/api';
+    }
+    // Variables de entorno de Vite
+    if (import.meta.env.VITE_API_BASE_URL) {
+      return `${import.meta.env.VITE_API_BASE_URL}/api`;
+    }
+    // Fallback para desarrollo local
+    return 'http://localhost:3000/api';
+  };
+  
+  const API_BASE = getApiBase();
+  
+  // Debug: mostrar la URL que se está usando
+  console.log('🔗 API_BASE URL:', API_BASE);
 
   // Cargar datos al iniciar
   useEffect(() => {
