@@ -391,33 +391,45 @@ function App() {
    * Intentar conectar al simulador virtual
    */
   const tryConnectVirtualClicker = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/status');
-      if (response.ok) {
-        const status = await response.json();
-        setSerialOutput(prev => prev + `🎮 Simulador virtual encontrado: ${status.deviceId}\n`);
-        setIsVirtualMode(true);
-        
-        // Configurar listener para respuestas del simulador
-        setupVirtualClickerListener();
-        return true;
+    // Lista de URLs para buscar el simulador virtual
+    const virtualClickerUrls = [
+      'http://localhost:3001', // Desarrollo local
+      'https://virtual-clicker.onrender.com' // Producción en Render
+    ];
+
+    for (const url of virtualClickerUrls) {
+      try {
+        setSerialOutput(prev => prev + `🔍 Buscando simulador virtual en: ${url}\n`);
+        const response = await fetch(`${url}/api/status`);
+        if (response.ok) {
+          const status = await response.json();
+          setSerialOutput(prev => prev + `🎮 Simulador virtual encontrado: ${status.deviceId} en ${url}\n`);
+          setIsVirtualMode(true);
+          
+          // Configurar listener para respuestas del simulador
+          setupVirtualClickerListener(url);
+          return true;
+        }
+      } catch (error) {
+        setSerialOutput(prev => prev + `❌ No se encontró simulador en ${url}\n`);
+        continue; // Probar la siguiente URL
       }
-    } catch (error) {
-      // Simulador no disponible, continuar con puerto serie físico
-      setSerialOutput(prev => prev + '📡 Simulador virtual no encontrado, usando puerto serie físico...\n');
     }
+    
+    // Si no se encuentra el simulador en ninguna URL
+    setSerialOutput(prev => prev + '📡 Simulador virtual no encontrado, usando puerto serie físico...\n');
     return false;
   };
 
   /**
    * Configurar listener para el simulador virtual
    */
-  const setupVirtualClickerListener = () => {
+  const setupVirtualClickerListener = (virtualClickerUrl = 'http://localhost:3001') => {
     try {
-      setSerialOutput(prev => prev + '🎮 Conectando via Socket.IO al simulador virtual...\n');
+      setSerialOutput(prev => prev + `🎮 Conectando via Socket.IO al simulador virtual en ${virtualClickerUrl}...\n`);
       
       // Conectar via Socket.IO al simulador virtual
-      const socket = io('http://localhost:3001');
+      const socket = io(virtualClickerUrl);
       
       socket.on('connect', () => {
         setVirtualSocket(socket);
