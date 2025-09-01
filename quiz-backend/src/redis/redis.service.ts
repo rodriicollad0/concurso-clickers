@@ -377,6 +377,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   // Estadísticas en tiempo real
   async incrementAnswerStat(questionId: number, option: string): Promise<number> {
+    if (!this.redisClient) {
+      this.logger.warn(`Redis not available, skipping increment for question ${questionId} option ${option}`);
+      return 0;
+    }
+    
     const key = `stats:question:${questionId}:${option}`;
     try {
       return await this.redisClient.incr(key);
@@ -387,6 +392,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getAnswerStats(questionId: number): Promise<{A: number, B: number, C: number, D: number}> {
+    if (!this.redisClient) {
+      this.logger.warn(`Redis not available, returning zero stats for question ${questionId}`);
+      return { A: 0, B: 0, C: 0, D: 0 };
+    }
+    
     try {
       const [A, B, C, D] = await Promise.all([
         this.redisClient.get(`stats:question:${questionId}:A`),
@@ -457,6 +467,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getParticipants(quizId: number): Promise<string[]> {
+    if (!this.redisClient) {
+      this.logger.warn(`Redis not available, returning empty participants list for quiz ${quizId}`);
+      return [];
+    }
+    
     const key = `participants:quiz:${quizId}`;
     try {
       return await this.redisClient.sMembers(key);
@@ -467,6 +482,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getParticipantCount(quizId: number): Promise<number> {
+    if (!this.redisClient) {
+      this.logger.warn(`Redis not available, returning 0 participants for quiz ${quizId}`);
+      return 0;
+    }
+    
     const key = `participants:quiz:${quizId}`;
     try {
       return await this.redisClient.sCard(key);
@@ -478,6 +498,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   // Limpieza de datos
   async clearQuizData(quizId: number): Promise<void> {
+    if (!this.redisClient) {
+      this.logger.warn(`Redis not available, skipping clear quiz data for quiz ${quizId}`);
+      return;
+    }
+    
     try {
       const keys = [
         `quiz:${quizId}:state`,
