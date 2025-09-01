@@ -23,7 +23,7 @@ import { RedisModule } from './redis/redis.module';
             type: 'postgres',
             url: databaseUrl,
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: configService.get('NODE_ENV') !== 'production',
+            synchronize: true, // Cambiar a true temporalmente para crear tablas
             logging: configService.get('NODE_ENV') === 'development',
             ssl: { rejectUnauthorized: false },
           };
