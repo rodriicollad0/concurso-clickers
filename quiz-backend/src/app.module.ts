@@ -15,19 +15,20 @@ import { RedisModule } from './redis/redis.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const isProduction = configService.get('NODE_ENV') === 'production';
+        const databaseUrl = configService.get('DATABASE_URL');
         
-        if (isProduction) {
-          // Usar SQLite en producción
+        if (databaseUrl) {
+          // Configuración para Render usando DATABASE_URL
           return {
-            type: 'sqlite',
-            database: 'quiz_system_prod.db',
+            type: 'postgres',
+            url: databaseUrl,
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: true,
-            logging: false,
+            synchronize: configService.get('NODE_ENV') !== 'production',
+            logging: configService.get('NODE_ENV') === 'development',
+            ssl: { rejectUnauthorized: false },
           };
         } else {
-          // Usar PostgreSQL en desarrollo
+          // Configuración para desarrollo local
           return {
             type: 'postgres',
             host: configService.get('DB_HOST', 'localhost'),
@@ -36,12 +37,9 @@ import { RedisModule } from './redis/redis.module';
             password: configService.get('DB_PASSWORD', 'password'),
             database: configService.get('DB_DATABASE', 'quiz_system'),
             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-            synchronize: true,
-            logging: true,
+            synchronize: configService.get('NODE_ENV') !== 'production',
+            logging: configService.get('NODE_ENV') === 'development',
             ssl: false,
-            extra: {
-              ssl: false,
-            },
           };
         }
       },
