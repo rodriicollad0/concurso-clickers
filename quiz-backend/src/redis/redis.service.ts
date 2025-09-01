@@ -55,6 +55,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private async connect() {
     try {
       const redisUrl = this.configService.get<string>('REDIS_URL') || 'redis://localhost:6379';
+      const isProduction = this.configService.get('NODE_ENV') === 'production';
+      
+      // En producción sin REDIS_URL configurada, usar memoria local
+      if (isProduction && !this.configService.get<string>('REDIS_URL')) {
+        this.logger.warn('⚠️  Redis not configured in production. Using in-memory storage (not recommended for multiple instances)');
+        return;
+      }
       
       // Cliente principal
       this.redisClient = createClient({
@@ -86,6 +93,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('✅ Redis connected successfully');
     } catch (error) {
       this.logger.error('❌ Failed to connect to Redis:', error);
+      
+      // En producción, continuar sin Redis en lugar de fallar
+      const isProduction = this.configService.get('NODE_ENV') === 'production';
+      if (isProduction) {
+        this.logger.warn('⚠️  Continuing without Redis in production mode');
+        return;
+      }
+      
       throw error;
     }
   }
@@ -104,6 +119,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async get(key: string): Promise<string | null> {
     try {
+      if (!this.redisClient) {
+        this.logger.warn(`Redis not available, skipping get for key: ${key}`);
+        return null;
+      }
+      
       return await this.redisClient.get(key);
     } catch (error) {
       this.logger.error(`Error getting key ${key}:`, error);
@@ -113,6 +133,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async set(key: string, value: string, ttl?: number): Promise<boolean> {
     try {
+      if (!this.redisClient) {
+        this.logger.warn(`Redis not available, skipping set for key: ${key}`);
+        return false;
+      }
+      
       if (ttl) {
         await this.redisClient.setEx(key, ttl, value);
       } else {
@@ -127,6 +152,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
   async del(key: string): Promise<boolean> {
     try {
+      if (!this.redisClient) {
+        this.logger.warn(`Redis not available, skipping delete for key: ${key}`);
+        return false;
+      }
+      
       await this.redisClient.del(key);
       return true;
     } catch (error) {
