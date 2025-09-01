@@ -205,7 +205,7 @@ class VirtualArduinoClicker {
       console.log('Conectando al sistema de quiz backend...');
       
       // 🌐 Permitir configurar la IP del backend via variable de entorno
-      const QUIZ_BACKEND_URL = process.env.QUIZ_BACKEND_URL || 'http://localhost:3000';
+      const QUIZ_BACKEND_URL = process.env.QUIZ_BACKEND_URL || 'https://quiz-backend-299n.onrender.com';
       console.log(`📡 Conectando a: ${QUIZ_BACKEND_URL}`);
       
       this.quizBackendSocket = clientIo(QUIZ_BACKEND_URL, {
