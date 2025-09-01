@@ -101,7 +101,7 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
   // Estados para pregunta activa
   const [activeQuestion, setActiveQuestion] = useState(null);
 
-  const API_BASE = 'http://localhost:3000/api';
+  const API_BASE = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'}/api`;
 
   // Cargar datos al iniciar
   useEffect(() => {

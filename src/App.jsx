@@ -431,7 +431,7 @@ function App() {
           setSerialOutput(prev => prev + `🎯 Auto-registrando clicker virtual: ${data.clickerId}\n`);
           
           // Conectar al backend para registrar automáticamente
-          const backendSocket = io('http://localhost:3000');
+          const backendSocket = io(import.meta.env.VITE_BACKEND_WS_URL || 'http://localhost:3000');
           
           backendSocket.on('connect', () => {
             // Enviar solicitud de auto-registro al backend
