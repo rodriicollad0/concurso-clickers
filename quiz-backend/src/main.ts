@@ -7,7 +7,13 @@ async function bootstrap() {
   
   // Configurar CORS para permitir conexiones desde el frontend
   app.enableCors({
-    origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:5174', 'https://concurso-clicker-app.onrender.com'],
+    origin: [
+      'http://localhost:5173', 
+      'http://localhost:5174',
+      'https://concurso-clicker-app.onrender.com',
+      'https://frontend-clickers.onrender.com',
+      /\.onrender\.com$/ // Permitir cualquier subdominio de onrender.com
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,

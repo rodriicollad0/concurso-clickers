@@ -119,6 +119,23 @@ export function QuizManager({ onQuizStart, onQuestionStart, onQuizEnd }) {
   
   // Debug: mostrar la URL que se está usando
   console.log('🔗 API_BASE URL:', API_BASE);
+  console.log('🌐 Current hostname:', window.location.hostname);
+  console.log('🌍 Full URL:', window.location.href);
+
+  // Test de conectividad al cargar
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        console.log('🧪 Testing connection to:', `${API_BASE.replace('/api', '')}/api/debug/cors`);
+        const response = await fetch(`${API_BASE.replace('/api', '')}/api/debug/cors`);
+        const data = await response.json();
+        console.log('✅ Connection test successful:', data);
+      } catch (error) {
+        console.error('❌ Connection test failed:', error);
+      }
+    };
+    testConnection();
+  }, [API_BASE]);
 
   // Cargar datos al iniciar
   useEffect(() => {

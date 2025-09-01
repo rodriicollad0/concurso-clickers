@@ -19,4 +19,20 @@ export class AppController {
       service: 'quiz-backend'
     };
   }
+
+  // 🔧 Debug endpoint para verificar CORS
+  @Get('debug/cors')
+  getDebugCors() {
+    return {
+      message: 'CORS test endpoint',
+      timestamp: new Date().toISOString(),
+      allowedOrigins: [
+        'http://localhost:5173',
+        'http://localhost:5174', 
+        'https://concurso-clicker-app.onrender.com',
+        'https://frontend-clickers.onrender.com',
+        'any *.onrender.com subdomain'
+      ]
+    };
+  }
 }
